@@ -1,0 +1,16 @@
+{
+  "minViews": 500000,
+  "recentPages": 12,
+  "perChannel": 40,
+  "note": "자동수집기가 각 채널 업로드 목록을 훑어 조회수 minViews 이상만 titles.json에 채웁니다. id를 못박아 오인식 방지. priority=true(지식인사이드)는 기준 채널.",
+  "channels": [
+    { "name": "지식인사이드", "id": "UCA_hgsFzmynpv1zkvA5A7jA", "priority": true, "desc": "제일 중요 · 기준 채널" },
+    { "name": "김작가 TV", "id": "UCvil4OAt-zShzkKHsg9EQAw", "desc": "경제·자기계발·성공, 전문가 인터뷰" },
+    { "name": "보다 BODA", "id": "UCoCvTlU0KpNYwnMIgs7MPrA", "desc": "뇌과학·심리·범죄 전문가 토크" },
+    { "name": "사피엔스 스튜디오", "id": "UC-9RQCJ0gS_Kgt7J0SVrE8w", "desc": "인문·역사·과학, 방송국 퀄리티" },
+    { "name": "세바시 강연", "id": "UCgheNMc3gGHLsT-RISdCzDQ", "desc": "심리·인간관계·멘탈 압축 강연" },
+    { "name": "조승연의 탐구생활", "id": "UCvW8norVMTLt7QN-s2pS4Bw", "desc": "문화·역사·경제 트렌드 대담" },
+    { "name": "슈카월드", "id": "UCsJ6RuBiTVWRX156FVbeaGg", "desc": "경제·시사" },
+    { "name": "하와이 대저택", "id": "UCO-e0J-Qsilkv_4tBa3LyYw", "desc": "동기부여·자기계발" }
+  ]
+}

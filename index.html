@@ -1,0 +1,513 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>타이틀 믹서 — 인기 유튜브 제목 보드</title>
+<style>
+  :root {
+    --bg: #f6f5fb; --panel: #ffffff; --panel-2: #f1f0f8; --border: #e3e1ef;
+    --text: #1b1a26; --muted: #77748c; --accent: #6d5efc; --accent-2: #ec4899;
+    --accent-soft: #ece9ff; --on-accent: #ffffff; --star: #f5a623; --r: 16px;
+    --shadow: 0 12px 30px -18px rgba(40,30,90,.30);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #131019; --panel: #1c1926; --panel-2: #241f31; --border: #322c44;
+      --text: #ece9f4; --muted: #9a95ad; --accent: #8b7dff; --accent-2: #f472b6;
+      --accent-soft: #2a2440; --on-accent: #ffffff; --star: #ffb02e;
+      --shadow: 0 14px 34px -20px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #131019; --panel: #1c1926; --panel-2: #241f31; --border: #322c44;
+    --text: #ece9f4; --muted: #9a95ad; --accent: #8b7dff; --accent-2: #f472b6;
+    --accent-soft: #2a2440; --on-accent: #ffffff; --star: #ffb02e;
+    --shadow: 0 14px 34px -20px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text); margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 26px 18px 60px; }
+
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .logo {
+    width: 54px; height: 54px; border-radius: 15px; flex: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center; color: #fff;
+    box-shadow: 0 8px 20px -8px var(--accent);
+  }
+  .logo svg { width: 30px; height: 30px; }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--panel-2); padding: 5px; border-radius: 12px; }
+  .tabs button {
+    flex: 1; border: 0; background: none; cursor: pointer; color: var(--muted);
+    font-size: 14px; font-weight: 700; padding: 10px 8px; border-radius: 9px; transition: all .12s;
+  }
+  .tabs button[aria-selected="true"] { background: var(--panel); color: var(--accent); box-shadow: var(--shadow); }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; }
+
+  /* 툴바 */
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .search {
+    flex: 1; min-width: 180px; display: flex; align-items: center; gap: 8px; background: var(--panel);
+    border: 1.5px solid var(--border); border-radius: 11px; padding: 9px 13px;
+  }
+  .search input { flex: 1; border: 0; background: none; font: inherit; font-size: 14px; color: var(--text); outline: none; }
+  .search svg { width: 16px; height: 16px; color: var(--muted); flex: none; }
+  select.sort { border: 1.5px solid var(--border); background: var(--panel); color: var(--text); border-radius: 11px; padding: 9px 12px; font: inherit; font-size: 13px; font-weight: 600; }
+  .chip { font-size: 12px; color: var(--muted); }
+
+  /* 채널 필터 칩 */
+  .chanbar { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .cf {
+    border: 1.5px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer;
+    border-radius: 999px; padding: 6px 13px; font-size: 12.5px; font-weight: 600; transition: all .12s;
+  }
+  .cf:hover { border-color: var(--accent); color: var(--accent); }
+  .cf.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .cf b { font-weight: 800; opacity: .7; margin-left: 4px; font-size: 11px; }
+
+  /* 보드 그리드 */
+  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 12px; }
+  .vid { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--panel); transition: transform .1s, box-shadow .15s, border-color .12s; }
+  .vid:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--accent); }
+  .thumb { position: relative; aspect-ratio: 16/9; background: #000; display: block; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb .ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; letter-spacing: .02em; opacity: .92; }
+  .thumb .play { position: absolute; inset: 0; margin: auto; width: 46px; height: 46px; border-radius: 50%; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; }
+  .thumb .play svg { width: 19px; height: 19px; color: #fff; margin-left: 2px; }
+  .vid:hover .thumb .play { opacity: 1; }
+  .vinfo { padding: 10px 12px 12px; }
+  .vinfo .t { font-size: 13.5px; font-weight: 600; word-break: keep-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 38px; }
+  .vinfo .b { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
+  .vinfo .ch { font-size: 11.5px; color: var(--muted); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vinfo .vw { font-size: 11.5px; font-weight: 700; color: var(--accent); flex: none; }
+  .vinfo .act { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 15px; padding: 2px 4px; border-radius: 6px; flex: none; }
+  .vinfo .act:hover { background: var(--accent-soft); color: var(--accent); }
+  .vinfo .act.star.on { color: var(--star); }
+
+  /* 조합 */
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .mode {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none;
+    border: 1.5px solid var(--border); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+    color: var(--muted); transition: all .12s;
+  }
+  .mode input { display: none; }
+  .mode.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .mode .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: 0; transition: opacity .12s; }
+  .mode.on .dot { opacity: 1; }
+  .mode small { color: var(--muted); font-weight: 500; }
+  .mode.on small { color: var(--accent); opacity: .8; }
+  .genrow { display: flex; gap: 10px; align-items: center; }
+  .btn {
+    border: 0; cursor: pointer; font-size: 15px; font-weight: 800; padding: 13px 22px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent);
+    transition: transform .1s, filter .12s; box-shadow: 0 10px 24px -12px var(--accent);
+  }
+  .btn:hover { filter: brightness(1.05); }
+  .btn:active { transform: scale(.98); }
+  .btn.ghost { background: none; color: var(--muted); border: 1.5px solid var(--border); box-shadow: none; font-weight: 700; font-size: 13px; padding: 10px 15px; }
+  .btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .count { color: var(--muted); font-size: 13px; margin-left: auto; }
+
+  .results { margin-top: 18px; display: flex; flex-direction: column; gap: 9px; }
+  .cand { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-2); }
+  .cand:hover { border-color: var(--accent); }
+  .cand .txt { flex: 1; font-size: 15px; font-weight: 600; word-break: keep-all; }
+  .cand .tag { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; flex: none; }
+  .tag.fb { background: rgba(109,94,252,.14); color: var(--accent); }
+  .tag.word { background: rgba(236,72,153,.14); color: var(--accent-2); }
+  .tag.ai { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+  .keyinput { flex: 1; border: 1.5px solid var(--border); border-radius: 11px; padding: 10px 13px; font: inherit; font-size: 13px; background: var(--panel-2); color: var(--text); }
+  .keyinput:focus { outline: none; border-color: var(--accent); }
+  .cand .act, .row .act { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 16px; padding: 4px 6px; border-radius: 8px; flex: none; }
+  .cand .act:hover { background: var(--accent-soft); color: var(--accent); }
+  .cand .act.star.on { color: var(--star); }
+
+  .list { display: flex; flex-direction: column; gap: 7px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-2); }
+  .row .txt { flex: 1; font-size: 14px; word-break: keep-all; }
+  .row .act:hover { background: var(--accent-soft); color: var(--accent-2); }
+
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 44px 10px; grid-column: 1/-1; }
+  textarea { width: 100%; min-height: 80px; resize: vertical; border: 1.5px solid var(--border); border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 14px; background: var(--panel-2); color: var(--text); }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  .hint { color: var(--muted); font-size: 12px; }
+  .sectitle { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0; }
+  footer { margin-top: 24px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+  .banner { background: var(--accent-soft); color: var(--accent); border-radius: 10px; padding: 9px 13px; font-size: 12.5px; font-weight: 600; margin-bottom: 14px; }
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: all .2s; z-index: 50; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M9 20h6"/><path d="M12 5v15"/><path d="M18.5 12.5l2 2-4 4-2.2.4.4-2.2z"/></svg></div>
+    <div>
+      <h1>타이틀 믹서</h1>
+      <p>지식·인터뷰 채널 인기 제목 모아보기 + 조합해서 아이디어 뽑기</p>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button data-tab="board" aria-selected="true">🔥 인기 제목</button>
+    <button data-tab="kw" aria-selected="false">🔑 키워드</button>
+    <button data-tab="fav" aria-selected="false">⭐ 보관함</button>
+  </div>
+
+  <!-- 인기 제목 보드 -->
+  <section id="tab-board">
+    <div class="banner" id="seedBanner">📌 지금은 <b>예시 데이터</b>예요. 다음 단계에서 유튜브 자동수집을 붙이면 실제 인기 영상 제목·썸네일·조회수가 채워집니다 (조회수 50만+ 만).</div>
+    <div class="toolbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="q" placeholder="제목·채널 검색">
+      </div>
+      <select class="sort" id="sort">
+        <option value="views">조회수순</option>
+        <option value="recent">최신순</option>
+        <option value="channel">채널순</option>
+      </select>
+      <button class="btn ghost" id="refreshBtn" title="최신 자료로 갱신" style="padding:9px 12px">↻</button>
+    </div>
+    <div class="chanbar" id="chanbar"></div>
+    <div class="board" id="board"></div>
+    <div class="toolbar" style="margin-top:16px">
+      <span class="sectitle">직접 추가·데이터 관리</span>
+      <button class="btn ghost" id="addToggle" style="margin-left:auto">+ 제목 추가</button>
+      <button class="btn ghost" id="expBtn">내보내기</button>
+      <button class="btn ghost" id="impBtn">가져오기</button>
+    </div>
+    <div class="panel" id="addPanel" hidden style="margin-top:4px">
+      <p class="sectitle" style="margin-bottom:9px">한 줄에 하나씩 제목 붙여넣기</p>
+      <textarea id="addText" placeholder="제목만 붙여넣어도 돼요 (썸네일·조회수는 자동수집 때 채워짐)"></textarea>
+      <div class="genrow" style="margin-top:9px"><button class="btn" id="addBtn" style="font-size:14px;padding:11px 18px">추가</button></div>
+    </div>
+  </section>
+
+  <!-- 키워드 -->
+  <section id="tab-kw" hidden>
+    <div class="panel" style="margin-bottom:14px">
+      <div class="search" style="margin-bottom:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="kw" placeholder="키워드 입력 후 Enter (예: 돈, 인간관계, AI, 습관)">
+      </div>
+      <div class="chanbar" id="kwchips" style="margin:12px 0 0"></div>
+    </div>
+    <div id="kwEmpty" class="empty">키워드를 넣으면 ① 관련 <b>인기 제목 TOP 20</b> + ② <b>AI가 그 스타일로 만든 새 제목</b>을 보여줘요.</div>
+    <div id="kwOut" hidden>
+      <div class="toolbar">
+        <span class="sectitle">✨ AI가 만든 새 제목<span id="aiKwLabel" style="color:var(--accent)"></span></span>
+        <button class="btn" id="aiGen" style="margin-left:auto;font-size:13px;padding:10px 16px">AI로 만들기</button>
+        <button class="btn ghost" id="aiSetBtn" title="AI 키 설정" style="padding:9px 12px">⚙</button>
+      </div>
+      <div class="panel" id="aiKeyPanel" hidden style="margin-bottom:10px">
+        <p class="sectitle" style="margin-bottom:8px">Gemini API 키 <span style="font-weight:500">(내 브라우저에만 저장 · 무료)</span></p>
+        <div class="genrow">
+          <input id="aiKey" class="keyinput" placeholder="AIza...">
+          <button class="btn" id="aiKeySave" style="font-size:13px;padding:10px 16px">저장</button>
+        </div>
+        <p class="hint" style="margin-top:7px"><b>aistudio.google.com/apikey</b> 에서 무료 발급 → 붙여넣기. 각자 자기 키를 쓰면 돼요.</p>
+      </div>
+      <div class="results" id="aiList"></div>
+      <div class="toolbar" style="margin-top:22px"><span class="sectitle" id="relLabel">🔥 연관 인기 제목</span></div>
+      <div class="board" id="relList"></div>
+    </div>
+  </section>
+
+  <!-- 보관함 -->
+  <section id="tab-fav" hidden>
+    <div class="toolbar">
+      <span class="sectitle">⭐ 내가 담은 것 (이 브라우저에만 저장)</span>
+      <button class="btn ghost" id="favCopy" style="margin-left:auto">전체 복사</button>
+      <button class="btn ghost" id="favClear">비우기</button>
+    </div>
+    <div class="list" id="favList"></div>
+  </section>
+
+  <footer>
+    · ⭐보관함은 <b>내 브라우저에만</b> 저장돼요(개인). 인기 제목 DB는 팀 공유됩니다.<br>
+    · AI·연관 제목은 아이디어 참고용 — 그대로 쓰기보단 다듬어 쓰세요. AI 키는 각자 브라우저에만 저장됩니다.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="impFile" accept="application/json" hidden>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+/* ── 씨앗(예시). 배포 후 titles.json 로 교체 ─────────────────────────── */
+const SEED = [
+  ["당신이 가난한 진짜 이유, 뇌과학자가 밝히다", "BODA 보다", 1240000],
+  ["50대에 후회하지 않으려면 지금 이것부터 하세요", "세바시 강연", 870000],
+  ["부자들은 절대 말하지 않는 돈의 비밀", "김작가 TV", 2100000],
+  ["역사가 증명한 무너지는 나라의 공통점", "사피엔스 스튜디오", 990000],
+  ["인간관계가 편해지는 딱 한 가지 태도", "세바시 강연", 1530000],
+  ["뇌를 망치는 습관 vs 천재로 만드는 습관", "BODA 보다", 760000],
+  ["평범한 회사원이 100억 자산가가 된 방법", "김작가 TV", 3050000],
+  ["세계사를 바꾼 결정적 순간 TOP5", "조승연의 탐구생활", 640000],
+  ["당신의 인생이 안 풀리는 결정적 이유", "하와이 대저택", 1880000],
+  ["경제 위기, 지금 무엇을 준비해야 하나", "슈카월드", 1120000],
+  ["30대에 반드시 알아야 할 인생의 진실", "지식인사이드", 2470000],
+  ["성공한 사람들은 아침에 이것을 합니다", "하와이 대저택", 930000],
+  ["심리학자가 알려주는 상처받지 않는 법", "BODA 보다", 1350000],
+  ["돈 버는 사람들의 생각법은 다릅니다", "김작가 TV", 1670000],
+  ["역사상 가장 위대한 리더의 조건", "사피엔스 스튜디오", 580000],
+  ["지금 당장 그만둬야 할 최악의 습관", "지식인사이드", 2010000],
+].map(([text, channel, views], i) => ({ text, channel, views, videoId: "", added: i }));
+
+const LS = { added: "titlemixer-added", fav: "titlemixer-fav" };
+const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+let remote = [];
+let added = load(LS.added, []);
+let favs = load(LS.fav, []);
+
+function allTitles() {
+  const seen = new Set(), out = [];
+  const src = [...remote, ...added];
+  if (!remote.length) src.push(...SEED);   // 실제 데이터 없을 때만 예시 사용
+  for (const it of src) {
+    const t = (it.text || "").trim();
+    if (t && !seen.has(t)) { seen.add(t); out.push(it); }
+  }
+  return out;
+}
+
+/* ── 숫자·썸네일 ────────────────────────────────────────────────────── */
+function fmtViews(n) {
+  if (!n) return "";
+  if (n >= 10000) { const m = n / 10000; return (m >= 100 ? Math.round(m) : m.toFixed(1).replace(/\.0$/, "")) + "만"; }
+  return n.toLocaleString();
+}
+const PH = ["#6d5efc", "#ec4899", "#f5a623", "#22a06b", "#3b82f6", "#ef4444", "#8b5cf6", "#0ea5e9"];
+function chColor(ch) { let h = 0; for (const c of ch || "?") h = (h * 31 + c.charCodeAt(0)) >>> 0; return PH[h % PH.length]; }
+
+/* ── 보드 렌더 ──────────────────────────────────────────────────────── */
+function videoCard(it) {
+  const el = document.createElement("div");
+  el.className = "vid";
+  const thumb = document.createElement("div");
+  thumb.className = "thumb";
+  if (it.videoId) {
+    thumb.innerHTML = `<img loading="lazy" src="https://img.youtube.com/vi/${it.videoId}/hqdefault.jpg" alt="">`;
+  } else {
+    thumb.innerHTML = `<div class="ph" style="background:linear-gradient(135deg, ${chColor(it.channel)}, ${chColor(it.channel)}bb)">${(it.channel || "?").slice(0, 6)}</div>`;
+  }
+  thumb.insertAdjacentHTML("beforeend", `<div class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>`);
+  if (it.videoId) { thumb.style.cursor = "pointer"; thumb.onclick = () => window.open(`https://youtu.be/${it.videoId}`, "_blank"); }
+
+  const info = document.createElement("div");
+  info.className = "vinfo";
+  info.innerHTML = `<div class="t"></div><div class="b"><span class="ch"></span><span class="vw"></span></div>`;
+  info.querySelector(".t").textContent = it.text;
+  info.querySelector(".ch").textContent = it.channel || "";
+  info.querySelector(".vw").textContent = it.views ? "· " + fmtViews(it.views) + "회" : "";
+  const isFav = favs.includes(it.text);
+  const copy = document.createElement("button");
+  copy.className = "act"; copy.textContent = "⧉"; copy.title = "제목 복사"; copy.style.marginLeft = "auto";
+  copy.onclick = () => { navigator.clipboard.writeText(it.text); toast("복사됨"); };
+  const star = document.createElement("button");
+  star.className = "act star" + (isFav ? " on" : ""); star.textContent = isFav ? "★" : "☆"; star.title = "보관함에 담기";
+  star.onclick = () => { toggleFav(it.text); star.classList.toggle("on"); star.textContent = favs.includes(it.text) ? "★" : "☆"; };
+  info.querySelector(".b").append(copy, star);
+  el.append(thumb, info);
+  return el;
+}
+
+let chanFilter = "";
+function renderChanbar() {
+  const counts = {};
+  for (const it of allTitles()) { const c = it.channel || "기타"; counts[c] = (counts[c] || 0) + 1; }
+  const chans = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  const bar = $("chanbar");
+  bar.innerHTML = "";
+  const mk = (label, val, n) => {
+    const b = document.createElement("button");
+    b.className = "cf" + (chanFilter === val ? " on" : "");
+    b.innerHTML = `${label}<b>${n}</b>`;
+    b.onclick = () => { chanFilter = val; renderBoard(); };
+    return b;
+  };
+  bar.appendChild(mk("전체", "", allTitles().length));
+  for (const c of chans) bar.appendChild(mk(c, c, counts[c]));
+}
+
+function renderBoard() {
+  renderChanbar();
+  const q = $("q").value.trim().toLowerCase();
+  const sort = $("sort").value;
+  let list = allTitles();
+  if (chanFilter) list = list.filter((x) => (x.channel || "기타") === chanFilter);
+  if (q) list = list.filter((x) => (x.text + " " + (x.channel || "")).toLowerCase().includes(q));
+  if (sort === "views") list = [...list].sort((a, b) => (b.views || 0) - (a.views || 0));
+  else if (sort === "channel") list = [...list].sort((a, b) => (a.channel || "").localeCompare(b.channel || ""));
+  else list = [...list].sort((a, b) => (b.added || 0) - (a.added || 0));
+  const box = $("board");
+  box.innerHTML = "";
+  if (!list.length) { box.innerHTML = `<div class="empty">검색 결과가 없어요.</div>`; return; }
+  for (const it of list) box.appendChild(videoCard(it));
+}
+
+/* ── 조합 ───────────────────────────────────────────────────────────── */
+const rand = (a) => a[Math.floor(Math.random() * a.length)];
+const SEP = ["|", "—", "–", "ㅣ", ":", "~", "・", "·", "…", ",", "-"];
+function splitFrontBack(t) {
+  t = t.trim();
+  for (const s of SEP) { const i = t.indexOf(s); if (i > 2 && i < t.length - 2) return [t.slice(0, i).trim(), t.slice(i + s.length).trim()]; }
+  const w = t.split(/\s+/); if (w.length < 2) return null;
+  const mid = Math.round(w.length / 2); return [w.slice(0, mid).join(" "), w.slice(mid).join(" ")];
+}
+const AIKEY = "titlemixer-gemini";
+let kwCurrent = "";
+
+function renderKwChips() {
+  const ex = ["돈", "인간관계", "AI", "습관", "건강", "성공", "심리", "역사", "투자", "뇌", "은퇴", "자녀", "대화", "공부"];
+  const bar = $("kwchips"); bar.innerHTML = "";
+  for (const k of ex) { const b = document.createElement("button"); b.className = "cf"; b.textContent = k; b.onclick = () => { $("kw").value = k; runKeyword(k); }; bar.appendChild(b); }
+}
+
+function runKeyword(kw) {
+  kw = (kw || "").trim(); kwCurrent = kw;
+  if (!kw) { $("kwEmpty").hidden = false; $("kwOut").hidden = true; return; }
+  $("kwEmpty").hidden = true; $("kwOut").hidden = false;
+  $("aiKwLabel").textContent = ` · "${kw}"`;
+  $("aiList").innerHTML = `<div class="empty" style="padding:22px">위 <b>AI로 만들기</b> 버튼을 누르면 "${kw}" 제목을 지어줘요.</div>`;
+  const low = kw.toLowerCase();
+  const matched = allTitles().filter((x) => x.text.toLowerCase().includes(low)).sort((a, b) => (b.views || 0) - (a.views || 0));
+  $("relLabel").textContent = matched.length ? `🔥 '${kw}' 연관 인기 제목 TOP ${Math.min(20, matched.length)}` : `🔥 '${kw}' 연관 인기 제목`;
+  const rl = $("relList"); rl.innerHTML = "";
+  if (!matched.length) rl.innerHTML = `<div class="empty">'${kw}' 들어간 인기 제목이 아직 없어요. 다른 키워드로 찾거나 자동수집을 늘리면 더 잡혀요.</div>`;
+  else for (const it of matched.slice(0, 20)) rl.appendChild(videoCard(it));
+}
+
+async function aiGenerate() {
+  const kw = kwCurrent; if (!kw) { toast("키워드를 먼저 넣어주세요"); return; }
+  const key = load(AIKEY, "");
+  if (!key) { $("aiKeyPanel").hidden = false; $("aiKey").value = ""; toast("먼저 Gemini 키를 넣어주세요"); return; }
+  const btn = $("aiGen"); btn.disabled = true; const old = btn.textContent; btn.textContent = "생성 중…";
+  $("aiList").innerHTML = `<div class="empty" style="padding:22px">AI가 "${kw}" 제목을 짓는 중…</div>`;
+  try {
+    const all = allTitles();
+    const ex = [...all.filter((x) => x.text.includes(kw)), ...all].map((x) => x.text);
+    const uniq = [...new Set(ex)].slice(0, 40);
+    const prompt = `너는 한국 유튜브 지식·인터뷰 콘텐츠의 제목 카피라이터야. 아래는 조회수가 높았던 인기 제목 예시들이야:\n\n${uniq.join("\n")}\n\n이 제목들의 후킹 방식·말투·구조를 참고해서 "${kw}" 주제로 클릭을 부르는 새 유튜브 제목 12개를 지어줘.\n규칙: 각 줄에 제목 하나씩, 번호·따옴표·설명 없이 제목 텍스트만.`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`;
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+    if (!res.ok) { const t = await res.text(); throw new Error(`${res.status} ${t.slice(0, 150)}`); }
+    const d = await res.json();
+    const text = d?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const lines = text.split("\n").map((s) => s.replace(/^\s*\d+[.)]\s*/, "").replace(/^["'\-•*]\s*/, "").replace(/["']$/, "").trim()).filter((s) => s.length > 3);
+    const box = $("aiList"); box.innerHTML = "";
+    if (!lines.length) box.innerHTML = `<div class="empty">응답을 못 받았어요. 키·할당량을 확인해 주세요.</div>`;
+    else for (const t of lines) box.appendChild(candCard({ text: t, mode: "ai" }));
+  } catch (err) {
+    $("aiList").innerHTML = `<div class="empty">AI 오류: ${String(err.message || err).slice(0, 160)}<br><span style="font-size:12px">키가 맞는지, 이 키로 Gemini 생성 API가 되는지 확인하세요.</span></div>`;
+  }
+  btn.disabled = false; btn.textContent = old;
+}
+
+const MODE_LABEL = { fb: "앞뒤", word: "어절", ai: "AI" };
+function candCard(c) {
+  const el = document.createElement("div"); el.className = "cand";
+  el.innerHTML = `<span class="tag ${c.mode}">${MODE_LABEL[c.mode]}</span><span class="txt"></span>`;
+  el.querySelector(".txt").textContent = c.text;
+  const copy = document.createElement("button"); copy.className = "act"; copy.textContent = "⧉"; copy.title = "복사";
+  copy.onclick = () => { navigator.clipboard.writeText(c.text); toast("복사됨"); };
+  const star = document.createElement("button");
+  const isFav = favs.includes(c.text);
+  star.className = "act star" + (isFav ? " on" : ""); star.textContent = isFav ? "★" : "☆"; star.title = "담기";
+  star.onclick = () => { toggleFav(c.text); star.classList.toggle("on"); star.textContent = favs.includes(c.text) ? "★" : "☆"; };
+  el.append(copy, star); return el;
+}
+/* ── 보관함 ─────────────────────────────────────────────────────────── */
+function toggleFav(t) { const i = favs.indexOf(t); if (i >= 0) favs.splice(i, 1); else favs.unshift(t); save(LS.fav, favs); if (!$("tab-fav").hidden) renderFav(); }
+function renderFav() {
+  const box = $("favList"); box.innerHTML = "";
+  if (!favs.length) { box.innerHTML = `<div class="empty">아직 담은 게 없어요. ⭐ 를 눌러 담아보세요.</div>`; return; }
+  for (const t of favs) {
+    const el = document.createElement("div"); el.className = "row";
+    el.innerHTML = `<span class="txt"></span>`; el.querySelector(".txt").textContent = t;
+    const copy = document.createElement("button"); copy.className = "act"; copy.textContent = "⧉";
+    copy.onclick = () => { navigator.clipboard.writeText(t); toast("복사됨"); };
+    const del = document.createElement("button"); del.className = "act"; del.textContent = "✕";
+    del.onclick = () => toggleFav(t);
+    el.append(copy, del); box.appendChild(el);
+  }
+}
+
+function updateCount() {}   // (구 조합탭 잔재 — 무력화)
+
+/* ── 탭 ─────────────────────────────────────────────────────────────── */
+$("tabs").onclick = (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  [...$("tabs").children].forEach((c) => c.setAttribute("aria-selected", c === b));
+  const t = b.dataset.tab;
+  $("tab-board").hidden = t !== "board"; $("tab-kw").hidden = t !== "kw"; $("tab-fav").hidden = t !== "fav";
+  if (t === "board") renderBoard(); if (t === "fav") renderFav(); if (t === "kw") renderKwChips();
+};
+
+/* ── 이벤트 ─────────────────────────────────────────────────────────── */
+$("kw").onkeydown = (e) => { if (e.key === "Enter") runKeyword($("kw").value); };
+$("aiGen").onclick = aiGenerate;
+$("aiSetBtn").onclick = () => { $("aiKeyPanel").hidden = !$("aiKeyPanel").hidden; $("aiKey").value = load(AIKEY, ""); };
+$("aiKeySave").onclick = () => { const v = $("aiKey").value.trim(); save(AIKEY, v); $("aiKeyPanel").hidden = true; toast(v ? "AI 키 저장됨" : "키 지움"); };
+$("refreshBtn").onclick = async () => {
+  const btn = $("refreshBtn"); btn.textContent = "…"; btn.disabled = true;
+  try {
+    const r = await fetch("titles.json?t=" + Date.now(), { cache: "no-store" });
+    if (r.ok) { const d = await r.json(); remote = (d.titles || []).filter((x) => x && x.text); if (remote.length) $("seedBanner").hidden = true; renderBoard(); toast(`최신 ${remote.length}개 불러옴`); }
+    else toast("갱신할 데이터가 아직 없어요");
+  } catch { toast("갱신 실패"); }
+  btn.textContent = "↻"; btn.disabled = false;
+};
+$("q").oninput = renderBoard;
+$("sort").onchange = renderBoard;
+$("addToggle").onclick = () => { $("addPanel").hidden = !$("addPanel").hidden; };
+$("addBtn").onclick = () => {
+  const lines = $("addText").value.split("\n").map((s) => s.trim()).filter(Boolean);
+  if (!lines.length) return;
+  const have = new Set(allTitles().map((x) => x.text)); let n = 0;
+  for (const t of lines) if (!have.has(t)) { added.unshift({ text: t, channel: "직접추가", views: 0, videoId: "", added: Date.now() + n }); have.add(t); n++; }
+  save(LS.added, added); $("addText").value = ""; renderBoard(); updateCount(); toast(`${n}개 추가됨`);
+};
+$("favCopy").onclick = () => { if (favs.length) { navigator.clipboard.writeText(favs.join("\n")); toast("전체 복사됨"); } };
+$("favClear").onclick = () => { if (favs.length && confirm("보관함을 비울까요?")) { favs = []; save(LS.fav, favs); renderFav(); } };
+$("expBtn").onclick = () => {
+  const data = { updated: new Date().toISOString().slice(0, 10), titles: allTitles() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "titles.json"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000); toast("titles.json 내보냄");
+};
+$("impBtn").onclick = () => $("impFile").click();
+$("impFile").onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text()); const arr = Array.isArray(d) ? d : d.titles || [];
+    const have = new Set(allTitles().map((x) => x.text)); let n = 0;
+    for (const it of arr) { const t = (it.text || it).toString().trim(); if (t && !have.has(t)) { added.unshift({ text: t, channel: it.channel || "가져옴", views: it.views || 0, videoId: it.videoId || "", added: Date.now() + n }); have.add(t); n++; } }
+    save(LS.added, added); renderBoard(); updateCount(); toast(`${n}개 가져옴`);
+  } catch { toast("파일을 읽을 수 없어요"); }
+  e.target.value = "";
+};
+
+let toastT;
+function toast(m) { const el = $("toast"); el.textContent = m; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 1600); }
+
+/* ── titles.json 로드(배포 후 실제 데이터) ───────────────────────────── */
+(async () => {
+  try { const r = await fetch("titles.json", { cache: "no-store" }); if (r.ok) { const d = await r.json(); remote = (d.titles || []).filter((x) => x && x.text); if (remote.length) $("seedBanner").hidden = true; } } catch {}
+  renderBoard(); updateCount();
+})();
+renderBoard(); updateCount();
+
+window.__mixer = { allTitles, runKeyword, aiGenerate };
+</script>
