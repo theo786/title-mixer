@@ -60,10 +60,20 @@
   .search input { flex: 1; border: 0; background: none; font: inherit; font-size: 14px; color: var(--text); outline: none; }
   .search svg { width: 16px; height: 16px; color: var(--muted); flex: none; }
   select.sort { border: 1.5px solid var(--border); background: var(--panel); color: var(--text); border-radius: 11px; padding: 9px 12px; font: inherit; font-size: 13px; font-weight: 600; }
+  .updbtn {
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer;
+    border: 1.5px solid var(--accent); background: var(--accent-soft); color: var(--accent);
+    border-radius: 11px; padding: 9px 15px; font: inherit; font-size: 13px; font-weight: 700; transition: all .12s;
+  }
+  .updbtn:hover { background: var(--accent); color: var(--on-accent); }
+  .updbtn:active { transform: scale(.97); }
+  .updbtn:disabled { opacity: .6; cursor: default; }
   .chip { font-size: 12px; color: var(--muted); }
 
   /* 채널 필터 칩 */
-  .chanbar { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .asof { font-size: 12px; color: var(--muted); margin: 0 0 12px; font-weight: 500; }
+  .asof b { color: var(--accent); font-weight: 700; }
+  .chanbar { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
   .cf {
     border: 1.5px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer;
     border-radius: 999px; padding: 6px 13px; font-size: 12.5px; font-weight: 600; transition: all .12s;
@@ -165,7 +175,7 @@
   <section id="tab-board">
     <div class="banner" id="seedBanner">📌 지금은 <b>예시 데이터</b>예요. 다음 단계에서 유튜브 자동수집을 붙이면 실제 인기 영상 제목·썸네일·조회수가 채워집니다 (조회수 50만+ 만).</div>
     <div class="toolbar">
-      <div class="search">
+      <div class="search" style="flex:0 1 320px; margin-right:auto">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
         <input id="q" placeholder="제목·채널 검색">
       </div>
@@ -174,9 +184,10 @@
         <option value="recent">최신순</option>
         <option value="channel">채널순</option>
       </select>
-      <button class="btn ghost" id="refreshBtn" title="최신 자료로 갱신" style="padding:9px 12px">↻</button>
+      <button class="updbtn" id="refreshBtn" title="채널에서 최신 인기 제목 다시 불러오기">↻ 최신 갱신</button>
     </div>
     <div class="chanbar" id="chanbar"></div>
+    <div id="asOf" class="asof"></div>
     <div class="board" id="board"></div>
     <div class="toolbar" style="margin-top:16px">
       <span class="sectitle">직접 추가·데이터 관리</span>
@@ -268,8 +279,10 @@ const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; 
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
 let remote = [];
+let remoteMeta = {};
 let added = load(LS.added, []);
 let favs = load(LS.fav, []);
+function setAsOf() { const el = $("asOf"); if (!el) return; el.innerHTML = remoteMeta.updated ? `🗓 <b>${remoteMeta.updated}</b> 기준 · 조회수 50만+ 인기 제목 ${remoteMeta.count || allTitles().length}개` : ""; }
 
 function allTitles() {
   const seen = new Set(), out = [];
@@ -464,7 +477,7 @@ $("refreshBtn").onclick = async () => {
   const btn = $("refreshBtn"); btn.textContent = "…"; btn.disabled = true;
   try {
     const r = await fetch("titles.json?t=" + Date.now(), { cache: "no-store" });
-    if (r.ok) { const d = await r.json(); remote = (d.titles || []).filter((x) => x && x.text); if (remote.length) $("seedBanner").hidden = true; renderBoard(); toast(`최신 ${remote.length}개 불러옴`); }
+    if (r.ok) { const d = await r.json(); remote = (d.titles || []).filter((x) => x && x.text); remoteMeta = { updated: d.updated, count: d.count }; if (remote.length) $("seedBanner").hidden = true; setAsOf(); renderBoard(); toast(`최신 ${remote.length}개 불러옴`); }
     else toast("갱신할 데이터가 아직 없어요");
   } catch { toast("갱신 실패"); }
   btn.textContent = "↻"; btn.disabled = false;
@@ -504,8 +517,8 @@ function toast(m) { const el = $("toast"); el.textContent = m; el.classList.add(
 
 /* ── titles.json 로드(배포 후 실제 데이터) ───────────────────────────── */
 (async () => {
-  try { const r = await fetch("titles.json", { cache: "no-store" }); if (r.ok) { const d = await r.json(); remote = (d.titles || []).filter((x) => x && x.text); if (remote.length) $("seedBanner").hidden = true; } } catch {}
-  renderBoard(); updateCount();
+  try { const r = await fetch("titles.json", { cache: "no-store" }); if (r.ok) { const d = await r.json(); remote = (d.titles || []).filter((x) => x && x.text); remoteMeta = { updated: d.updated, count: d.count }; if (remote.length) $("seedBanner").hidden = true; } } catch {}
+  setAsOf(); renderBoard();
 })();
 renderBoard(); updateCount();
 
